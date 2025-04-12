@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Random Symbol Shuffle</title>
+  <title>The Great Mundane</title>
   <style>
     body {
       font-family: sans-serif;
@@ -97,9 +97,12 @@
     const symbolArray = symbols.split(" ");
     const revealed = new Array(symbolArray.length).fill("");
 
+    let availableIndices = [];
     let currentLetterIndex = 0;
     let isRevealing = true;
     let isUnrevealPhase = false;
+    let shuffleCount = 0; // Track shuffle count
+    const maxShuffleCount = 4; // 4 shuffles before starting the unreveal phase
 
     function shuffleSymbols() {
       const shuffledSymbols = [...symbolArray];
@@ -109,25 +112,44 @@
       }
 
       if (isRevealing && currentLetterIndex < phrase.length) {
-        if (phrase[currentLetterIndex] !== " ") {
-          revealed[currentLetterIndex] = phrase[currentLetterIndex];
+        // Initialize availableIndices if it's the first reveal
+        if (availableIndices.length === 0) {
+          availableIndices = [...Array(phrase.length).keys()]; // Array of indices 0 to phrase.length - 1
         }
-        currentLetterIndex++;
 
-        if (currentLetterIndex >= phrase.length) {
-          isRevealing = false;
-          setTimeout(() => {
-            isUnrevealPhase = true;
-            unrevealLetters();
-          }, 500);
+        if (availableIndices.length > 0) {
+          // Pick a random index from the available positions
+          const randomIndex = availableIndices.splice(Math.floor(Math.random() * availableIndices.length), 1)[0];
+
+          if (phrase[randomIndex] !== " ") {
+            revealed[randomIndex] = phrase[randomIndex];
+          }
+
+          currentLetterIndex++;
+
+          if (currentLetterIndex >= phrase.length) {
+            isRevealing = false;
+            setTimeout(() => {
+              shuffleCount = 0; // Reset shuffle count after phrase is fully revealed
+              waitAndUnreveal();
+            }, 500); // Slight delay before starting to wait
+          }
         }
       }
 
       const finalSymbols = shuffledSymbols.slice(0, 17).map((symbol, index) => {
         return `<span class="symbol">${revealed[index] || symbol}</span>`;
-      }).join("");
+      }).join(" ");
 
       element.innerHTML = finalSymbols;
+    }
+
+    function waitAndUnreveal() {
+      // Wait for 4 shuffles (which is about 2 seconds at 500ms interval)
+      setTimeout(() => {
+        isUnrevealPhase = true;
+        unrevealLetters(); // Start the unreveal phase after the 2-second wait
+      }, 2000); // 2 seconds delay (4 shuffles)
     }
 
     function unrevealLetters() {
@@ -143,17 +165,19 @@
       const randomIndex = unrevealableIndices[Math.floor(Math.random() * unrevealableIndices.length)];
       revealed[randomIndex] = "";
 
-      setTimeout(unrevealLetters, 500);
+      setTimeout(unrevealLetters, 500); // 500ms delay to unreveal one letter at a time
     }
 
     function reset() {
       currentLetterIndex = 0;
       revealed.fill("");
+      availableIndices = [];
       isRevealing = true;
       isUnrevealPhase = false;
+      shuffleCount = 0;
     }
 
-    setInterval(shuffleSymbols, 500);
+    setInterval(shuffleSymbols, 500); // Shuffle every 500ms
   </script>
 
 </body>
